@@ -23,9 +23,13 @@ namespace FileSplitter.Processors
             }
         }
 
-        protected static string TruncateCoordinates(double value)
+        protected static string TruncateDouble(double value, int decimalPlaces)
         {
-            return $"{Math.Truncate(value * 100) / 100:0.00}";
+            var formatString = string.Concat("{0:F", decimalPlaces, "}");
+            var decimalPointMovement = Math.Pow(10, decimalPlaces);
+            var adjustedCoordinate = Math.Truncate(value * decimalPointMovement) / decimalPointMovement;
+
+            return string.Format(formatString, adjustedCoordinate);
         }
     }
 }

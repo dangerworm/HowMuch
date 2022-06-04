@@ -43,7 +43,8 @@ namespace FileSplitter.Processors
             Console.Write("done.");
 
             Console.WriteLine();
-            CreateOutputFiles(x => $"{TruncateCoordinates(x.Latitude)},{TruncateCoordinates(x.Longitude)}", "coordinates");
+            CreateOutputFiles(x => $"{TruncateDouble(x.Latitude, 1)}," +
+                                   $"{TruncateDouble(x.Longitude, 1)}", "coordinates");
             Console.Write("done.");
 
             Console.WriteLine();

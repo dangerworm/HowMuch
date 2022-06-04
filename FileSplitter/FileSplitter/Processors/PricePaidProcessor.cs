@@ -115,7 +115,10 @@ namespace FileSplitter.Processors
             CsvWriter.Write(writer, new string[csvColumns.Length], new[] { csvColumns }, ',', true);
             writer.Dispose();
 
-            var coordinatesPath = Path.Combine(OutputDirectoryPath, $"{TruncateCoordinates(item.Latitude)},{TruncateCoordinates(item.Longitude)}.csv");
+            var coordinatesPath = Path.Combine(OutputDirectoryPath, 
+                $"{TruncateDouble(item.Latitude, 2)}," +
+                $"{TruncateDouble(item.Longitude, 2)}.csv");
+
             writer = File.AppendText(coordinatesPath);
             CsvWriter.Write(writer, new string[csvColumns.Length], new[] { csvColumns }, ',', true);
             writer.Dispose();
