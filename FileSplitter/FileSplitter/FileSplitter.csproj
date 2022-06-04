@@ -14,7 +14,7 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Input\pp-complete.csv">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </None>
     <None Update="Input\ukpostcodes.csv">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

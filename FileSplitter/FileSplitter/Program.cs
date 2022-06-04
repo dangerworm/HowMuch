@@ -18,9 +18,8 @@ namespace FileSplitter
             Console.WriteLine();
 
             // pp-complete.csv taken from https://www.gov.uk/government/statistical-data-sets/price-paid-data-downloads#single-file
-            var pricePaidProcessor = new PricePaidProcessor(InputDirectory, "pp-complete.csv", HouseDataOutputDirectory, latLongProcessor.KeyedLocationData);
+            var pricePaidProcessor = new PricePaidProcessor(InputDirectory, "pp-2022.csv", HouseDataOutputDirectory, latLongProcessor.KeyedLocationData);
             pricePaidProcessor.Process();
         }
     }
 }
-
