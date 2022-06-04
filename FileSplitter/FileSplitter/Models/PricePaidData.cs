@@ -17,8 +17,6 @@ namespace FileSplitter.Models
                 DateOfTransfer = dateOfTransfer;
             }
 
-            Postcode = locationData[2].Split(" ");
-
             PostcodeFull = locationData[2];
 
             PropertyType = locationData[3] switch
@@ -68,19 +66,19 @@ namespace FileSplitter.Models
             RecordStatus = locationData[14] switch
             {
                 "A" => "Addition",
-                "C" => "Change",
-                "D" => "Delete",
+                "C" => "Changed",
+                "D" => "Deleted",
                 _ => "Unknown"
             };
         }
 
         public string PostcodeStart => Postcode[0];
 
+        public string[] Postcode => PostcodeFull.Split(" ");
+
         public int Price { get; }
 
         public DateTime DateOfTransfer { get; }
-
-        public string[] Postcode { get; }
 
         public string PostcodeFull { get; }
 

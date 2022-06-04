@@ -6,8 +6,6 @@ namespace FileSplitter.Models
     {
         public LocationData(IReadOnlyList<string> locationData)
         {
-            Postcode = locationData[0].Split(" ");
-            
             PostcodeFull = locationData[0];
 
             Latitude = double.TryParse(locationData[1], out var latitude)
@@ -21,7 +19,7 @@ namespace FileSplitter.Models
 
         public string PostcodeStart => Postcode[0];
 
-        public string[] Postcode { get; }
+        public string[] Postcode => PostcodeFull.Split(" ");
 
         public string PostcodeFull { get; }
 
@@ -33,7 +31,7 @@ namespace FileSplitter.Models
         {
             return Latitude == 0 || Longitude == 0
                 ? new string[0]
-                : new[] {$"{Postcode[0]} {Postcode[1]}", $"{Latitude:F10}", $"{Longitude:F10}"};
+                : new[] { PostcodeFull, $"{Latitude:F10}", $"{Longitude:F10}" };
         }
     }
 }

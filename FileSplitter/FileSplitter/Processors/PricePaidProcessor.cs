@@ -1,9 +1,9 @@
-﻿using System;
+﻿using Csv;
+using FileSplitter.Models;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Csv;
-using FileSplitter.Models;
 
 namespace FileSplitter.Processors
 {
@@ -19,41 +19,106 @@ namespace FileSplitter.Processors
 
         public void Process()
         {
-            var stream = File.OpenRead(InputPath);
+            Console.Write("Counting lines in house price data file...");
+            var reader = File.OpenText(InputPath);
+            var numberOfLines = CountLines(reader);
+            Console.WriteLine($"{numberOfLines:###,###,###,###}.");
 
-            Console.Write("Loading input file...");
-            var csvOptions = new CsvOptions
+            var divisor = 1000.0;
+            double logStep;
+            do
             {
-                HeaderMode = HeaderMode.HeaderAbsent
-            };
+                logStep = Math.Floor(numberOfLines / divisor);
+                divisor *= 10;
+            } while (logStep > 1000);
 
-            EntityData = CsvReader.ReadFromStream(stream, csvOptions)
-                .Select(x => new PricePaidData(x.Values.Skip(1).ToArray()))
-                .ToArray();
-            Console.WriteLine("done.");
+            const string message = "Processing price data...";
+            Console.Write(message);
 
-            stream.Dispose();
+            var csvOptions = new CsvOptions { HeaderMode = HeaderMode.HeaderAbsent };
+            var counter = 0;
+            string line;
+            while (!string.IsNullOrWhiteSpace(line = reader.ReadLine()))
+            {
+                if (counter % logStep == 0)
+                {
+                    Console.CursorLeft = message.Length;
+                    Console.Write($"line {counter:###,###,###,###} of {numberOfLines:###,###,###,###} ({counter * 100.0 / numberOfLines:F1}%)");
+                }
 
-            Console.Write("Adding lat/long information to entities...");
-            AddLatLongData();
-            Console.WriteLine("done.");
+                var pricePaidItem = CsvReader.ReadFromText(line, csvOptions)
+                    .Select(x => new PricePaidData(x.Values.Skip(1).ToArray()))
+                    .SingleOrDefault(x => x.RecordStatus != "Deleted" && x.PostcodeFull != string.Empty);
 
-            CreateLocationFiles();
+                counter++;
+
+                if (pricePaidItem == null)
+                {
+                    continue;
+                }
+
+                AddLatLongData(pricePaidItem);
+
+                if (pricePaidItem.Latitude == 0 && pricePaidItem.Longitude == 0)
+                {
+                    continue;
+                }
+
+                AppendToFiles(pricePaidItem);
+            }
+            
+            Console.CursorLeft = message.Length;
+            Console.WriteLine("done.                                                      ");
+
+            reader.Dispose();
+
+            Console.WriteLine();
         }
 
-        private void AddLatLongData()
+        private static int CountLines(StreamReader reader)
         {
-            foreach (var entity in EntityData)
+            var numberOfLines = 0;
+            while (reader.ReadLine() != null)
             {
-                if (!KeyedLocationData.ContainsKey(entity.PostcodeStart) || 
-                    KeyedLocationData[entity.PostcodeStart].All(x => x.PostcodeFull != entity.PostcodeFull)) 
-                    continue;
-
-                var location = KeyedLocationData[entity.PostcodeStart].Single(x => x.PostcodeFull == entity.PostcodeFull);
-
-                entity.Latitude = location.Latitude;
-                entity.Longitude = location.Longitude;
+                numberOfLines++;
             }
+
+            reader.BaseStream.Position = 0;
+            reader.DiscardBufferedData();
+
+            return numberOfLines;
+        }
+
+        private void AddLatLongData(PricePaidData item)
+        {
+            if (!KeyedLocationData.ContainsKey(item.PostcodeStart))
+            {
+                return;
+            }
+
+            var location = KeyedLocationData[item.PostcodeStart].SingleOrDefault(x => x.PostcodeFull == item.PostcodeFull);
+            if (location == null)
+            {
+                return;
+            }
+
+            item.Latitude = location.Latitude;
+            item.Longitude = location.Longitude;
+        }
+
+        private void AppendToFiles(IProcessableLocationEntity item)
+        {
+            var csvColumns = item.AsStringArray();
+
+            var postcodePath = Path.Combine(OutputDirectoryPath, $"{item.PostcodeStart}.csv");
+            var writer = File.AppendText(postcodePath);
+            CsvWriter.Write(writer, new string[csvColumns.Length], new[] { csvColumns }, ',', true);
+            writer.Dispose();
+
+            var coordinatesPath = Path.Combine(OutputDirectoryPath, $"{TruncateCoordinates(item.Latitude)},{TruncateCoordinates(item.Longitude)}.csv");
+            writer = File.AppendText(coordinatesPath);
+            CsvWriter.Write(writer, new string[csvColumns.Length], new[] { csvColumns }, ',', true);
+            writer.Dispose();
         }
     }
 }

@@ -2,9 +2,9 @@
 {
     public interface IProcessableLocationEntity
     {
-        public string[] Postcode { get; }
-        
         public string PostcodeStart { get; }
+        
+        public string[] Postcode { get; }
 
         public string PostcodeFull { get; }
          
