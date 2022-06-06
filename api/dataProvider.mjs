@@ -1,19 +1,26 @@
 import fs from 'fs';
+import request from 'sync-request';
+
+import { availableFilenames } from './availableFilenames.mjs'
 import { adjustPriceByDate } from './priceConverter.mjs';
 
-const houseDataOutputPath = '../FileSplitter/FileSplitter/bin/Debug/netcoreapp3.1/HouseDataOutput/';
+const localDataPath = '../FileSplitter/FileSplitter/bin/Debug/netcoreapp3.1/HouseDataOutput/';
+const remoteDataPath = 'https://raw.githubusercontent.com/dangerworm/HowMuch/main/api/house_price_data/';
 
-const fileExists = (filePath) => {
-  try {
-    fs.accessSync(filePath, fs.constants.R_OK);
-    return true;
-  } catch (err) {
-    console.log(err);
-    return false;
-  }
+const fileExists = (file) => {
+  // try {
+  //   fs.accessSync(file, fs.constants.R_OK);
+  //   return true;
+  // } catch (err) {
+  //   console.log(err);
+  //   return false;
+  // }
+
+  return availableFilenames.includes(`${file}.csv`);
 }
 
-const getFilePath = (filename) => `${houseDataOutputPath}${filename}.csv`;
+const getLocalPath = (filename) => `${localDataPath}${filename}.csv`;
+const getRemotePath = (filename) => `${remoteDataPath}${filename}.csv`;
 
 const getPostcodeOptions = (postcode) => {
   const filenames = [];
@@ -34,7 +41,7 @@ const getPostcodeOptions = (postcode) => {
     }
   }
 
-  return filenames.filter(x => fileExists(getFilePath(x)));
+  return filenames.filter(fileExists);
 }
 
 const parseLine = (houseDataLine) => {
@@ -60,17 +67,27 @@ const parseLine = (houseDataLine) => {
   };
 }
 
-const readFile = (filename, postcode, lat, long) => {
-  const filePath = getFilePath(filename);
-  
-  if (!fileExists(filePath)) {
-    return [];
-  }
-
-  const data = fs
-    .readFileSync(filePath, 'utf8')
+const readLocalFile = (filename) => {
+  return fs
+    .readFileSync(getLocalPath(filename), 'utf8')
     .split(/\r\n|\n/)
     .map(parseLine);
+}
+
+const readRemoteFile = (filename) => {
+  return request('GET', getRemotePath(filename))
+    .getBody('utf8')
+    .split(/\r\n|\n/)
+    .map(parseLine);
+}
+
+const readFile = (filename, postcode, lat, long) => {
+  if (!fileExists(filename)) {
+    return [];
+  }
+  
+  //const data = readLocalFile(filename);
+  const data = readRemoteFile(filename);
 
   if (postcode) {
     return data.filter(x => x.postcode == postcode);
@@ -99,6 +116,10 @@ export function getByPostcode(postcode) {
 
   if (postcodeOptions.length > 1) {
     return { continue: "Please select a postcode prefix", options: postcodeOptions };
+  }
+
+  if (!postcode.includes(' ')){
+    postcode = postcodeOptions[0] + ' ' + postcode.substring(postcodeOptions[0].length);
   }
 
   const data = readFile(postcodeOptions[0], postcode, null, null);
