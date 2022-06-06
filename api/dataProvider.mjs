@@ -1,10 +1,11 @@
 import fs from 'fs';
+import { adjustPriceByDate } from './priceConverter.mjs';
 
 const houseDataOutputPath = '../FileSplitter/FileSplitter/bin/Debug/netcoreapp3.1/HouseDataOutput/';
 
-const fileExists = (filename) => {
+const fileExists = (filePath) => {
   try {
-    fs.accessSync(houseDataOutputPath + filename + '.csv', fs.constants.R_OK);
+    fs.accessSync(filePath, fs.constants.R_OK);
     return true;
   } catch (err) {
     console.log(err);
@@ -34,49 +35,83 @@ const getPostcodeOptions = (postcode) => {
   return filenames.filter(fileExists);
 }
 
-const mapToJson = (houseDataLine) => {
+const parseLine = (houseDataLine) => {
   const items = houseDataLine.split(',');
   
   return {
-    price: parseInt(items[0]),
     dateOfTransfer: new Date(items[1]),
-    postcode: items[2],
+    price: parseInt(items[0]),
+    adjustedPrice: adjustPriceByDate(new Date(items[1]), parseInt(items[0])),
     propertyType: items[3],
     class: items[4],
     tenureDuration: items[5],
-    primaryName: items[6],
-    secondaryName: items[7],
-    street: items[8],
-    locality: items[9],
-    townOrCity: items[10],
-    district: items[11],
-    county: items[12]
+    // primaryName: items[6],
+    // secondaryName: items[7],
+    // street: items[8],
+    // locality: items[9],
+    // townOrCity: items[10],
+    // district: items[11],
+    // county: items[12],
+    postcode: items[2],
+    latitude: parseFloat(items[15]),
+    longitude: parseFloat(items[16]),
   };
+}
+
+const readFile = (filename, postcode, lat, long) => {
+  const filePath = `${houseDataOutputPath}${filename}.csv`;
+  
+  if (!fileExists(filePath)) {
+    return [];
+  }
+
+  const data = fs
+    .readFileSync(filePath, 'utf8')
+    .split(/\r\n|\n/)
+    .map(parseLine);
+
+  if (postcode) {
+    return data.filter(x => x.postcode == postcode);
+  }
+
+  if (lat && long) {
+    const latitude = parseFloat(lat);
+    const longitude = parseFloat(long);
+
+    return data.filter(x => x.latitude == latitude && x.longitude == longitude);
+  }
+
+  return [];
+}
+
+const truncate = (value) => {
+  return `${Math.trunc(value * 100) / 100}`;
 }
 
 export function getByPostcode(postcode) {
   const postcodeOptions = getPostcodeOptions(postcode.toUpperCase());
   
   if (postcodeOptions.length == 0) {
-    return { error: "No matching postcodes found" };
+    return { error: "No matching postcode data found" };
   }
 
   if (postcodeOptions.length > 1) {
     return { continue: "Please select a postcode prefix", options: postcodeOptions };
   }
 
-  const filePath = `${houseDataOutputPath}${postcodeOptions[0]}.csv`;
-  let data = fs
-    .readFileSync(filePath, 'utf8')
-    .split(/\r\n|\n/);
-
-  data = data
-    .filter(x => x.split(',')[2] == postcode)
-    .map(mapToJson);
+  const data = readFile(postcodeOptions[0], postcode, null, null);
 
   return { data };
 }
 
 export function getByCoordinates(lat, long) {
-  return { lat, long };
+  const coordinateRegex = /-?\d+\.\d+/;
+
+  if (!coordinateRegex.test(lat) || !coordinateRegex.test(long)) {
+    return { error: "Coordinates in incorrect format" };
+  }
+
+  const data = readFile(`${truncate(lat)},${truncate(long)}`, null, lat, long);
+  
+  return { data };
 }
