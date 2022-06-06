@@ -15,7 +15,7 @@ namespace FileSplitter.Processors
         public ProcessableLocationEntityProcessor(string inputDirectory, string inputFile, string outputDirectory)
         {
             InputPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory!, inputDirectory, inputFile);
-            OutputDirectoryPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory!, outputDirectory);
+            OutputDirectoryPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory!, "..", "..", "..", "..", "..", outputDirectory);
 
             if (!Directory.Exists(OutputDirectoryPath))
             {

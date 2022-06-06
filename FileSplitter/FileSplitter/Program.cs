@@ -6,8 +6,8 @@ namespace FileSplitter
     public class Program
     {
         private const string InputDirectory = "Input";
-        private const string LocationOutputDirectory = "LocationOutput";
-        private const string HouseDataOutputDirectory = "HouseDataOutput";
+        private const string LocationOutputDirectory = "location_data";
+        private const string HouseDataOutputDirectory = "house_price_data";
 
         static void Main(string[] args)
         {
