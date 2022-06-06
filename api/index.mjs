@@ -19,8 +19,8 @@ const parseQueryParams = (req, res) => {
     return res.json(getByCoordinates(latitude, longitude));
   }
 
-  res.writeHead(400, 'Request must include a postcode or a lat/long combination', {'content-type' : 'text/plain'});
-  res.end('Invalid query string');
+  res.writeHead(400, 'Invalid query string', {'content-type' : 'text/plain'});
+  res.end('Request must include a postcode or a lat/long combination');
 }
 
 express()

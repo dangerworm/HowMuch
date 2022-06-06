@@ -13,6 +13,8 @@ const fileExists = (filePath) => {
   }
 }
 
+const getFilePath = (filename) => `${houseDataOutputPath}${filename}.csv`;
+
 const getPostcodeOptions = (postcode) => {
   const filenames = [];
   
@@ -32,7 +34,7 @@ const getPostcodeOptions = (postcode) => {
     }
   }
 
-  return filenames.filter(fileExists);
+  return filenames.filter(x => fileExists(getFilePath(x)));
 }
 
 const parseLine = (houseDataLine) => {
@@ -59,7 +61,7 @@ const parseLine = (houseDataLine) => {
 }
 
 const readFile = (filename, postcode, lat, long) => {
-  const filePath = `${houseDataOutputPath}${filename}.csv`;
+  const filePath = getFilePath(filename);
   
   if (!fileExists(filePath)) {
     return [];
